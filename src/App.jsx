@@ -253,8 +253,7 @@ export default function App() {
   
   // --- API Call & Meal Plan Logic ---
 const callGeminiAPI = async (prompt, schema) => {
-    // NOTA: Assicurati che il nome del modello sia corretto, es: "gemini-1.5-flash"
-    const apiKey = process.env.REACT_APP_GEMINI_API_KEY; // ATTENZIONE ALLA SICUREZZA! Vedi nota sotto.
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
     const payload = {
