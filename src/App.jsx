@@ -252,16 +252,47 @@ export default function App() {
   };
   
   // --- API Call & Meal Plan Logic ---
-  const callGeminiAPI = async (prompt, schema) => {
-    const payload = { contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json", responseSchema: schema }};
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-    const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    if (!response.ok) throw new Error(`API Error: ${response.status}`);
+const callGeminiAPI = async (prompt, schema) => {
+    // NOTA: Assicurati che il nome del modello sia corretto, es: "gemini-1.5-flash"
+    const apiKey = ""; // ATTENZIONE ALLA SICUREZZA! Vedi nota sotto.
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+
+    const payload = {
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: schema,
+            // --- AGGIUNGI QUESTA RIGA ---
+            maxOutputTokens: 8192, // Permette una risposta molto più lunga
+        }
+    };
+
+    const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        // Log più dettagliato per il debug
+        const errorBody = await response.text();
+        console.error("API Error Body:", errorBody);
+        throw new Error(`API Error: ${response.status}`);
+    }
+
     const result = await response.json();
-    if (result.candidates?.[0]?.content?.parts?.[0]?.text) { return JSON.parse(result.candidates[0].content.parts[0].text); }
+
+    // Debug: Logga il testo ricevuto PRIMA del parsing
+    // console.log("Raw API response text:", result.candidates?.[0]?.content?.parts?.[0]?.text);
+
+    if (result.candidates?.[0]?.content?.parts?.[0]?.text) {
+        return JSON.parse(result.candidates[0].content.parts[0].text);
+    }
+
+    // Se la risposta è vuota o malformata, logga l'intera risposta per il debug
+    console.error("Invalid API response structure:", result);
     throw new Error("Invalid API response");
-  };
+};
 
   const portionSchema = { type: "OBJECT", properties: { nome_membro: { type: "STRING" }, quantita_suggerita: { type: "STRING" }, calorie_porzione: { type: "NUMBER" }, proteine: { type: "NUMBER" }, carboidrati: { type: "NUMBER" }, grassi: { type: "NUMBER" }}, required: ["nome_membro", "quantita_suggerita", "calorie_porzione", "proteine", "carboidrati", "grassi"]};
   const detailedMealSchema = { type: "OBJECT", properties: { nome: { type: "STRING" }, porzioni: { type: "ARRAY", items: portionSchema }}, required: ["nome", "porzioni"]};
